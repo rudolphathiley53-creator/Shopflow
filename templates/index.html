@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopFlow — Mes courses</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: #1C2B1E;
+            --sidebar-hover: #26381F;
+            --sidebar-active: #304B22;
+            --sidebar-border: rgba(255, 255, 255, 0.07);
+            --sidebar-text: #D6E8CB;
+            --sidebar-muted: rgba(214, 232, 203, 0.45);
+            --main-bg: #F8F7F2;
+            --main-surface: #FFFFFF;
+            --main-border: #E8E4DC;
+            --main-border2: #D4CFC5;
+            --text-1: #1A1A18;
+            --text-2: #5C5A52;
+            --text-3: #9A9790;
+            --accent: #5A8A3C;
+            --accent-light: #EBF3E4;
+            --accent-border: #A5C882;
+            --danger: #C94A3B;
+            --danger-light: #FBF0EE;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --font-head: 'Fraunces', Georgia, serif;
+            --font-body: 'Outfit', system-ui, sans-serif;
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--main-bg);
+            color: var(--text-1);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        button { cursor: pointer; font-family: var(--font-body); }
+
+        /* ── BANNIÈRE MODE DÉMO ── */
+        .demo-banner {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: #92400e;
+            color: #fef3c7;
+            text-align: center;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 500;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+        .demo-banner.visible { display: flex; }
+        .demo-banner strong { font-weight: 600; }
+        .demo-badge {
+            background: #fef3c7; color: #92400e;
+            padding: 2px 8px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+        }
+
+        /* ── LAYOUT ── */
+        .layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            width: 100%; max-width: 920px; min-height: 620px;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--main-border);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar { background: var(--sidebar-bg); display: flex; flex-direction: column; overflow: hidden; }
+        .sidebar-top { padding: 22px 18px 16px; border-bottom: 1px solid var(--sidebar-border); }
+        .app-brand { display: flex; align-items: center; gap: 10px; }
+        .app-logo {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, #7BBF4E, #4E8A2F);
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .app-title { font-family: var(--font-head); font-size: 17px; font-weight: 600; color: #E8F4DE; }
+        .app-sub { font-size: 11px; color: var(--sidebar-muted); margin-top: 1px; font-weight: 300; }
+        .section-label {
+            font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+            color: var(--sidebar-muted); padding: 16px 18px 6px; text-transform: uppercase;
+        }
+        .nav-list { flex: 1; overflow-y: auto; padding-bottom: 8px; }
+        .nav-list::-webkit-scrollbar { width: 4px; }
+        .nav-list::-webkit-scrollbar-track { background: transparent; }
+        .nav-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .list-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 18px; cursor: pointer; transition: background 0.15s;
+            gap: 10px; position: relative;
+        }
+        .list-item:hover { background: var(--sidebar-hover); }
+        .list-item.active { background: var(--sidebar-active); }
+        .list-item.active::before {
+            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 3px; height: 60%; background: #7BBF4E; border-radius: 0 2px 2px 0;
+        }
+        .list-item-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+        .list-icon {
+            width: 30px; height: 30px; border-radius: var(--radius-sm);
+            background: rgba(255,255,255,0.06);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; flex-shrink: 0;
+        }
+        .list-name {
+            font-size: 13px; font-weight: 500; color: var(--sidebar-text);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .list-badge {
+            font-size: 10px; font-weight: 600; color: var(--sidebar-muted);
+            background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 20px; flex-shrink: 0;
+        }
+        .list-badge.all-done { background: rgba(123,191,78,0.2); color: #A5D97A; }
+        .list-item-actions { display: none; gap: 2px; }
+        .list-item:hover .list-item-actions { display: flex; }
+        .list-item:hover .list-badge { display: none; }
+        .nav-action-btn {
+            width: 22px; height: 22px; border-radius: 4px; border: none;
+            background: rgba(255,255,255,0.06); color: var(--sidebar-muted);
+            font-size: 12px; display: flex; align-items: center; justify-content: center;
+            transition: all 0.1s;
+        }
+        .nav-action-btn:hover { background: rgba(201,74,59,0.25); color: #F07D73; }
+
+        .add-list-btn {
+            margin: 10px 14px 16px;
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 14px; border-radius: var(--radius-md);
+            border: 1px dashed rgba(255,255,255,0.14);
+            cursor: pointer; font-size: 13px; font-weight: 400;
+            color: var(--sidebar-muted); background: transparent;
+            transition: all 0.15s; width: calc(100% - 28px);
+        }
+        .add-list-btn:hover { background: rgba(255,255,255,0.05); color: var(--sidebar-text); border-color: rgba(255,255,255,0.25); }
+        .add-list-btn .plus-icon {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: rgba(123,191,78,0.2); color: #7BBF4E;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; flex-shrink: 0;
+        }
+
+        /* ── MAIN ── */
+        .main { background: var(--main-bg); display: flex; flex-direction: column; overflow: hidden; }
+        .main-header {
+            background: var(--main-surface);
+            padding: 18px 24px 16px; border-bottom: 1px solid var(--main-border);
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        }
+        .main-title { display: flex; align-items: center; gap: 12px; }
+        .main-title-icon {
+            width: 38px; height: 38px; border-radius: var(--radius-md);
+            background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .main-title-text h2 { font-family: var(--font-head); font-size: 20px; font-weight: 600; color: var(--text-1); line-height: 1.1; }
+        .main-title-text small { font-size: 12px; color: var(--text-3); font-weight: 300; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .btn-icon {
+            width: 34px; height: 34px; border-radius: var(--radius-sm);
+            border: 1px solid var(--main-border); background: transparent;
+            color: var(--text-2); font-size: 15px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.12s;
+        }
+        .btn-icon:hover { background: var(--main-surface); border-color: var(--main-border2); color: var(--text-1); }
+        .btn-icon.danger:hover { background: var(--danger-light); border-color: #E8B0AA; color: var(--danger); }
+        .btn-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+        .progress-wrap { background: var(--main-surface); padding: 0 24px 14px; border-bottom: 1px solid var(--main-border); }
+        .progress-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--text-3); margin-bottom: 8px; font-weight: 400; }
+        .progress-pct { font-weight: 600; color: var(--accent); }
+        .progress-track { height: 5px; background: var(--main-border); border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #7BBF4E, #5A8A3C); border-radius: 3px; transition: width 0.4s cubic-bezier(.4,0,.2,1); }
+
+        .add-row {
+            padding: 14px 24px; background: var(--main-surface);
+            border-bottom: 1px solid var(--main-border);
+            display: flex; gap: 8px; align-items: center;
+        }
+        .add-row input, .add-row select {
+            font-family: var(--font-body); font-size: 13.5px;
+            background: var(--main-bg); border: 1px solid var(--main-border);
+            border-radius: var(--radius-sm); color: var(--text-1); padding: 7px 11px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .add-row input:focus, .add-row select:focus { outline: none; border-color: var(--accent-border); box-shadow: 0 0 0 3px rgba(90,138,60,0.1); }
+        .add-row input::placeholder { color: var(--text-3); }
+        #item-input { flex: 1; }
+        #qty-input { width: 72px; text-align: center; }
+        #categorie-select { flex-shrink: 0; cursor: pointer; }
+        .btn-add {
+            padding: 8px 18px; background: var(--accent); color: #fff; border: none;
+            border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
+            transition: all 0.15s; white-space: nowrap;
+        }
+        .btn-add:hover { background: #4A7530; box-shadow: 0 2px 8px rgba(90,138,60,0.3); }
+        .btn-add:active { transform: scale(0.97); }
+        .btn-add:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .items-scroll { flex: 1; overflow-y: auto; padding: 10px 0; }
+        .items-scroll::-webkit-scrollbar { width: 5px; }
+        .items-scroll::-webkit-scrollbar-track { background: transparent; }
+        .items-scroll::-webkit-scrollbar-thumb { background: var(--main-border); border-radius: 3px; }
+
+        .category-group { margin-bottom: 2px; }
+        .category-label { display: flex; align-items: center; gap: 7px; padding: 8px 24px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.9px; text-transform: uppercase; color: var(--text-3); }
+        .cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .item-row { display: flex; align-items: center; gap: 12px; padding: 10px 24px; transition: background 0.12s; animation: slideIn 0.2s ease; }
+        @keyframes slideIn { from { opacity:0; transform: translateX(-8px); } to { opacity:1; transform: translateX(0); } }
+        .item-row:hover { background: rgba(255,255,255,0.7); }
+        .item-row:hover .delete-btn { opacity: 1; }
+        .item-check {
+            width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--main-border2);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+            transition: all 0.15s; background: var(--main-surface);
+        }
+        .item-check:hover { border-color: var(--accent-border); }
+        .item-check.checked { background: var(--accent-light); border-color: var(--accent-border); }
+        .item-check svg { display: none; width: 11px; height: 11px; }
+        .item-check.checked svg { display: block; }
+        .item-name { flex: 1; font-size: 14px; font-weight: 400; transition: all 0.2s; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-name.done { text-decoration: line-through; color: var(--text-3); }
+        .item-qty { font-size: 11.5px; font-weight: 500; color: var(--text-2); background: var(--main-border); padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
+        .delete-btn { opacity: 0; border: none; background: none; color: var(--text-3); font-size: 18px; line-height: 1; padding: 0 2px; transition: all 0.12s; flex-shrink: 0; }
+        .delete-btn:hover { color: var(--danger); }
+
+        .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 56px 24px; gap: 16px; color: var(--text-3); }
+        .spinner { width: 28px; height: 28px; border: 2.5px solid var(--main-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 56px 24px; gap: 12px; color: var(--text-3); }
+        .empty-icon { font-size: 40px; line-height: 1; }
+        .empty-state h3 { font-family: var(--font-head); font-size: 17px; color: var(--text-2); font-weight: 400; }
+        .empty-state p { font-size: 13px; text-align: center; max-width: 240px; font-weight: 300; }
+
+        .stats-bar { display: flex; background: var(--main-surface); border-top: 1px solid var(--main-border); }
+        .stat { flex: 1; text-align: center; padding: 10px 8px; border-right: 1px solid var(--main-border); }
+        .stat:last-child { border-right: none; }
+        .stat-val { font-size: 17px; font-weight: 600; color: var(--text-1); line-height: 1.2; }
+        .stat-lbl { font-size: 10.5px; color: var(--text-3); font-weight: 400; margin-top: 1px; }
+        .stat-val.accent { color: var(--accent); }
+
+        /* ── MODAL ── */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(20,28,18,0.55); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 200; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: var(--main-surface); border-radius: var(--radius-xl); padding: 28px; width: 340px; box-shadow: var(--shadow-lg); border: 1px solid var(--main-border); animation: modalIn 0.2s cubic-bezier(.4,0,.2,1); }
+        @keyframes modalIn { from { opacity:0; transform: scale(0.94) translateY(8px); } to { opacity:1; transform: scale(1) translateY(0); } }
+        .modal-title { font-family: var(--font-head); font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--text-1); }
+        .modal-label { font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-3); margin-bottom: 7px; }
+        .modal input { width: 100%; padding: 10px 13px; border-radius: var(--radius-sm); border: 1px solid var(--main-border); background: var(--main-bg); color: var(--text-1); font-size: 14px; font-family: var(--font-body); margin-bottom: 18px; }
+        .modal input:focus { outline: none; border-color: var(--accent-border); box-shadow: 0 0 0 3px rgba(90,138,60,0.1); }
+        .icon-picker { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 24px; }
+        .icon-opt { aspect-ratio: 1; border-radius: var(--radius-sm); border: 1.5px solid var(--main-border); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: all 0.12s; }
+        .icon-opt:hover { border-color: var(--accent-border); background: var(--accent-light); }
+        .icon-opt.sel { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 0 0 2px rgba(90,138,60,0.15); }
+        .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+        .btn { padding: 9px 18px; border-radius: var(--radius-sm); border: 1px solid var(--main-border); background: transparent; color: var(--text-1); font-size: 13px; font-weight: 500; transition: all 0.12s; }
+        .btn:hover { background: var(--main-bg); }
+        .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn-primary:hover { background: #4A7530; border-color: #4A7530; }
+
+        /* ── TOAST ── */
+        .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text-1); color: #fff; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 500; pointer-events: none; z-index: 300; transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s; opacity: 0; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.error { background: var(--danger); }
+    </style>
+</head>
+
+<body>
+
+    <div class="demo-banner" id="demo-banner">
+        <span class="demo-badge">DÉMO</span>
+        <strong>Mode démo actif</strong> — Les données sont temporaires (back-end non détecté).
+    </div>
+
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-top">
+                <div class="app-brand">
+                    <div class="app-logo">🛒</div>
+                    <div>
+                        <div class="app-title">ShopFlow</div>
+                        <div class="app-sub">Mes listes de courses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-label">Mes listes</div>
+            <div class="nav-list" id="nav-list"></div>
+            <button class="add-list-btn" onclick="openNewListModal()">
+                <span class="plus-icon">+</span>
+                Nouvelle liste
+            </button>
+        </div>
+
+        <!-- MAIN -->
+        <div class="main">
+            <div class="main-header">
+                <div class="main-title">
+                    <div class="main-title-icon" id="active-icon"></div>
+                    <div class="main-title-text">
+                        <h2 id="active-name">—</h2>
+                        <small id="active-sub">0 article</small>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-icon" title="Tout cocher" onclick="checkAll()">
+                        <svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4" /></svg>
+                    </button>
+                    <button class="btn-icon danger" title="Effacer les achetés" onclick="clearDone()">
+                        <svg viewBox="0 0 16 16">
+                            <polyline points="3,5 13,5" />
+                            <path d="M5,5V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V5" />
+                            <path d="M4,5l1,9h6l1-9" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="progress-wrap">
+                <div class="progress-meta">
+                    <span id="prog-label">0 / 0 articles achetés</span>
+                    <span class="progress-pct" id="prog-pct">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+                </div>
+            </div>
+
+            <div class="add-row">
+                <input id="item-input" placeholder="Nom de l'article…" onkeydown="if(event.key==='Enter')addItem()" />
+                <input id="qty-input" placeholder="Qté" onkeydown="if(event.key==='Enter')addItem()" />
+
+                {# ─────────────────────────────────────────────────────────
+                   JINJA2 : le select des catégories est rempli côté serveur.
+                   Flask passe la liste "categories" depuis la route index().
+                   {% for %} est l'équivalent de foreach() en PHP.
+                   {{ cat.id }} = variable Jinja2 (équivalent de <?= $cat['id'] ?> en PHP)
+                ───────────────────────────────────────────────────────── #}
+                <select id="categorie-select">
+                    <option value="">Catégorie…</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" data-couleur="{{ cat.couleur }}">
+                            {{ cat.nom }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button class="btn-add" id="btn-add" onclick="addItem()">Ajouter</button>
+            </div>
+
+            <div class="items-scroll" id="items-list">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <span>Chargement…</span>
+                </div>
+            </div>
+            <div class="stats-bar" id="stats-bar"></div>
+        </div>
+    </div>
+
+    <!-- MODAL Nouvelle liste -->
+    <div class="modal-overlay" id="modal" onclick="handleOverlayClick(event)">
+        <div class="modal">
+            <div class="modal-title">Nouvelle liste</div>
+            <div class="modal-label">Nom</div>
+            <input id="nl-name" placeholder="Ex : Supermarché, Pharmacie…" onkeydown="if(event.key==='Enter')createList()" />
+            <div class="modal-label">Icône</div>
+            <div class="icon-picker" id="icon-picker"></div>
+            <div class="modal-btns">
+                <button class="btn" onclick="closeModal()">Annuler</button>
+                <button class="btn btn-primary" onclick="createList()">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── Configuration ─────────────────────────────────────────────
+        // Toutes les routes Flask commencent par /api/
+        // Elles correspondent exactement aux routes définies dans app.py
+        const ICONS = ['🛒','🍎','🥩','🥖','🧴','🧹','💊','📷','🔧','🖥','👔','🎁','🏠','📚','🌿','🍷','🐾','🎮','🍺','✏️','🌸','🎵'];
+
+        let listes    = [];
+        let articles  = [];
+        let activeId  = null;
+        let selectedIcon = '🛒';
+
+        // ── Fonction utilitaire : appel API ───────────────────────────
+        // Centralise tous les fetch() pour éviter la répétition.
+        // endpoint = URL relative ('/api/listes', '/api/articles?liste_id=1'...)
+        // method   = 'GET', 'POST', 'PATCH', 'DELETE'
+        // body     = objet JS à envoyer en JSON (optionnel)
+        async function callApi(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: { 'Content-Type': 'application/json' }
+            };
+            // Si on a un body → on le sérialise en JSON
+            // JSON.stringify = équivalent de json_encode() en PHP
+            if (body) options.body = JSON.stringify(body);
+
+            const res = await fetch(endpoint, options);
+
+            // res.json() = parse le JSON reçu (équivalent de json_decode() en PHP)
+            let data;
+            try { data = await res.json(); } catch { data = {}; }
+
+            // Si la réponse HTTP n'est pas OK (200-299) → on lève une erreur
+            if (!res.ok) throw new Error(data.erreur || data.error || `Erreur ${res.status}`);
+
+            return data;
+        }
+
+        // ── Toast (notification) ──────────────────────────────────────
+        function showToast(msg, type = '') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show' + (type ? ' ' + type : '');
+            setTimeout(() => t.className = 'toast', 2800);
+        }
+
+        function setBusy(busy) {
+            document.getElementById('btn-add').disabled = busy;
+        }
+
+        // ── Rendu de la sidebar (liste des listes) ────────────────────
+        function renderNav() {
+            document.getElementById('nav-list').innerHTML = listes.map(l => {
+                const lid    = Number(l.id);
+                const done   = Number(l.achetes) || 0;
+                const total  = Number(l.total)   || 0;
+                const allDone = total > 0 && done === total;
+
+                return `
+                    <div class="list-item ${lid === activeId ? 'active' : ''}" onclick="selectList(${lid})">
+                        <div class="list-item-left">
+                            <div class="list-icon">${l.icone}</div>
+                            <span class="list-name">${l.nom}</span>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="nav-action-btn" onclick="event.stopPropagation(); deleteList(${lid})" title="Supprimer">×</button>
+                        </div>
+                        <span class="list-badge ${allDone ? 'all-done' : ''}">${done}/${total}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ── Rendu du contenu principal (articles) ─────────────────────
+        function renderMain() {
+            const liste = listes.find(l => Number(l.id) === activeId);
+            if (!liste) return;
+
+            const total = articles.length;
+            const done  = articles.filter(a => a.achete).length;
+            const pct   = total ? Math.round(done / total * 100) : 0;
+
+            document.getElementById('active-icon').textContent  = liste.icone;
+            document.getElementById('active-name').textContent  = liste.nom;
+            document.getElementById('active-sub').textContent   = `${total} article${total !== 1 ? 's' : ''}`;
+            document.getElementById('prog-fill').style.width    = pct + '%';
+            document.getElementById('prog-label').textContent   = `${done} / ${total} achetés`;
+            document.getElementById('prog-pct').textContent     = pct + '%';
+
+            // Barre de stats en bas
+            document.getElementById('stats-bar').innerHTML = `
+                <div class="stat"><div class="stat-val">${total}</div><div class="stat-lbl">Total</div></div>
+                <div class="stat"><div class="stat-val accent">${done}</div><div class="stat-lbl">Achetés</div></div>
+                <div class="stat"><div class="stat-val">${total - done}</div><div class="stat-lbl">Restants</div></div>
+            `;
+
+            const container = document.getElementById('items-list');
+
+            if (!total) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">${liste.icone}</div>
+                        <h3>Liste vide</h3>
+                        <p>Ajoutez votre premier article ci-dessus.</p>
+                    </div>`;
+                return;
+            }
+
+            // Regroupement des articles par catégorie
+            const byCat = {};
+            articles.forEach(a => {
+                const key = a.categorie_nom;
+                if (!byCat[key]) byCat[key] = { couleur: a.categorie_couleur, items: [] };
+                byCat[key].items.push(a);
+            });
+
+            container.innerHTML = Object.entries(byCat).map(([cat, g]) => `
+                <div class="category-group">
+                    <div class="category-label">
+                        <div class="cat-dot" style="background:${g.couleur}"></div>
+                        ${cat}
+                    </div>
+                    ${g.items.map(a => `
+                        <div class="item-row">
+                            <div class="item-check ${a.achete ? 'checked' : ''}" onclick="toggleItem(${a.id}, ${!!a.achete})">
+                                <svg viewBox="0 0 11 9" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="1,4.5 4,7.5 10,1"/>
+                                </svg>
+                            </div>
+                            <span class="item-name ${a.achete ? 'done' : ''}">${a.nom}</span>
+                            ${a.quantite ? `<span class="item-qty">${a.quantite}</span>` : ''}
+                            <button class="delete-btn" onclick="deleteItem(${a.id})">×</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        function render() {
+            renderNav();
+            renderMain();
+        }
+
+        // ── Chargement des données depuis Flask ───────────────────────
+
+        async function chargerListes() {
+            // Appelle GET /api/listes → route get_listes() dans app.py
+            listes = await callApi('/api/listes');
+            if (!activeId && listes.length) activeId = Number(listes[0].id);
+        }
+
+        async function chargerArticles() {
+            if (!activeId) { articles = []; return; }
+            // Appelle GET /api/articles?liste_id=X → route get_articles() dans app.py
+            articles = await callApi(`/api/articles?liste_id=${activeId}`);
+        }
+
+        async function selectList(id) {
+            activeId = Number(id);
+            await chargerArticles();
+            render();
+        }
+
+        async function rafraichir() {
+            await chargerListes();
+            await chargerArticles();
+            render();
+        }
+
+        // ── Actions utilisateur ───────────────────────────────────────
+
+        async function addItem() {
+            const nom      = document.getElementById('item-input').value.trim();
+            const quantite = document.getElementById('qty-input').value.trim() || 'x1';
+            const catId    = Number(document.getElementById('categorie-select').value);
+
+            if (!nom)                    return showToast("Entrez un nom d'article", 'error');
+            if (!catId || isNaN(catId))  return showToast("Choisissez une catégorie", 'error');
+            if (!activeId)               return showToast("Sélectionnez une liste", 'error');
+
+            setBusy(true);
+            try {
+                // Appelle POST /api/articles → route creer_article() dans app.py
+                await callApi('/api/articles', 'POST', {
+                    nom,
+                    quantite,
+                    liste_id:     activeId,
+                    categorie_id: catId
+                });
+                document.getElementById('item-input').value = '';
+                document.getElementById('qty-input').value  = '';
+                await rafraichir();
+                showToast('Article ajouté !');
+            } catch (err) {
+                showToast('Erreur : ' + err.message, 'error');
+            } finally {
+                setBusy(false);
+            }
+        }
+
+        async function toggleItem(id, estDejaAchete) {
+            try {
+                // Appelle PATCH /api/articles/<id> → route toggle_achete() dans app.py
+                await callApi(`/api/articles/${id}`, 'PATCH', { achete: !estDejaAchete });
+                await rafraichir();
+            } catch (err) {
+                showToast("Erreur lors du changement d'état", 'error');
+            }
+        }
+
+        async function deleteItem(id) {
+            try {
+                // Appelle DELETE /api/articles/<id> → route supprimer_article() dans app.py
+                await callApi(`/api/articles/${id}`, 'DELETE');
+                await rafraichir();
+                showToast('Article supprimé.');
+            } catch (err) {
+                showToast('Erreur suppression', 'error');
+            }
+        }
+
+        async function deleteList(id) {
+            if (!confirm('Supprimer cette liste et tous ses articles ?')) return;
+            try {
+                // Appelle DELETE /api/listes/<id> → route supprimer_liste() dans app.py
+                await callApi(`/api/listes/${id}`, 'DELETE');
+                if (activeId === id) { activeId = null; articles = []; }
+                await rafraichir();
+                showToast('Liste supprimée.');
+            } catch (err) {
+                showToast('Erreur suppression liste', 'error');
+            }
+        }
+
+        async function checkAll() {
+            const nonAchetes = articles.filter(a => !a.achete);
+            if (!nonAchetes.length) return;
+            try {
+                await Promise.all(
+                    nonAchetes.map(a => callApi(`/api/articles/${a.id}`, 'PATCH', { achete: true }))
+                );
+                await rafraichir();
+            } catch (err) {
+                showToast('Erreur', 'error');
+            }
+        }
+
+        async function clearDone() {
+            const achetes = articles.filter(a => a.achete);
+            if (!achetes.length) return showToast('Aucun article acheté à effacer.');
+            try {
+                await Promise.all(
+                    achetes.map(a => callApi(`/api/articles/${a.id}`, 'DELETE'))
+                );
+                await rafraichir();
+                showToast(`${achetes.length} article(s) supprimé(s).`);
+            } catch (err) {
+                showToast('Erreur', 'error');
+            }
+        }
+
+        // ── Modal nouvelle liste ──────────────────────────────────────
+
+        function openNewListModal() {
+            document.getElementById('nl-name').value = '';
+            selectedIcon = '🛒';
+            // Remplissage dynamique du sélecteur d'icônes
+            document.getElementById('icon-picker').innerHTML = ICONS.map(ic => `
+                <div class="icon-opt ${ic === selectedIcon ? 'sel' : ''}" onclick="pickIcon('${ic}')">${ic}</div>
+            `).join('');
+            document.getElementById('modal').classList.add('open');
+            setTimeout(() => document.getElementById('nl-name').focus(), 100);
+        }
+
+        function pickIcon(ic) {
+            selectedIcon = ic;
+            document.querySelectorAll('.icon-opt').forEach(el => {
+                el.classList.toggle('sel', el.textContent === ic);
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open');
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target === e.currentTarget) closeModal();
+        }
+
+        async function createList() {
+            const nom = document.getElementById('nl-name').value.trim();
+            if (!nom) return showToast('Entrez un nom', 'error');
+            try {
+                // Appelle POST /api/listes → route creer_liste() dans app.py
+                const res = await callApi('/api/listes', 'POST', { nom, icone: selectedIcon });
+                activeId = Number(res.id);
+                closeModal();
+                await rafraichir();
+                showToast('Liste créée !');
+            } catch (err) {
+                showToast('Erreur création liste', 'error');
+            }
+        }
+
+        // ── Initialisation ────────────────────────────────────────────
+        async function init() {
+            try {
+                // Test de connexion au back-end Flask
+                await callApi('/api/test');
+            } catch {
+                // Si Flask ne répond pas → mode démo (bannière orange)
+                document.getElementById('demo-banner').classList.add('visible');
+                return;
+            }
+
+            try {
+                await rafraichir();
+            } catch (err) {
+                console.error('Erreur init:', err);
+                showToast('Erreur de connexion à la base de données', 'error');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
